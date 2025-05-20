@@ -35,7 +35,7 @@ namespace Geolocation.Services.Services
                 if (string.IsNullOrWhiteSpace(ip))
                 {
                     _logger.LogWarning("Could not determine caller IP address.");
-                    return true; // Fail secure
+                    return true; 
                 }
 
                 var geo = await _geo.GetCountryWithIpAddress(ip);
@@ -43,15 +43,13 @@ namespace Geolocation.Services.Services
                 if (geo == null || string.IsNullOrWhiteSpace(geo.CountryCode))
                 {
                     _logger.LogWarning("Failed to get country code from IP: {IP}", ip);
-                    return true; // Fail secure
+                    return true; 
                 }
 
-                // Check both permanent and temporal blocks
                 bool isPermanentlyBlocked = _repo.IsCountryBlocked(geo.CountryCode);
                 bool isTemporarilyBlocked = _repo.IsCountryBlocked(geo.CountryCode);
                 bool isBlocked = isPermanentlyBlocked || isTemporarilyBlocked;
 
-                // Enhanced logging
                 _repo.LogAttempt(new BlockedAttemptLog
                 {
                     IPAddress = ip,
@@ -74,7 +72,7 @@ namespace Geolocation.Services.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking if IP is blocked");
-                return true; // Fail secure
+                return true; 
             }
         }
     }

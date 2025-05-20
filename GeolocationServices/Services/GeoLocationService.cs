@@ -37,19 +37,16 @@ namespace Geolocation.Services.Services
                 var apiKey = _config["GeoLocationApi:ApiKey"];
                 var baseUrl = _config["GeoLocationApi:BaseUrl"];
 
-                // Validate IP address first
                 if (!IPAddress.TryParse(ipAddress, out _))
                 {
                     _logger.LogWarning("Invalid IP address format: {ip}", ipAddress);
                     return null;
                 }
 
-                // Log the request for debugging
                 _logger.LogInformation("Requesting geo data for IP: {ip}", ipAddress);
 
                 var response = await _httpClient.GetAsync($"{baseUrl}?apiKey={apiKey}&ip={ipAddress}");
 
-                // Check if request failed
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
@@ -59,7 +56,7 @@ namespace Geolocation.Services.Services
                 }
 
                 var json = await response.Content.ReadAsStringAsync();
-                _logger.LogDebug("Raw API response: {json}", json);  // Log raw response
+                _logger.LogDebug("Raw API response: {json}", json); 
 
                 var geo = JsonConvert.DeserializeObject<GeoLocationResponse>(json);
 
