@@ -1,0 +1,6 @@
+@GeolocationProject_HostAddress = http://localhost:5239
+
+GET {{GeolocationProject_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
