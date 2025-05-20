@@ -19,6 +19,8 @@ namespace Geolocation.Services
         private readonly ConcurrentDictionary<string, TemporalBlock> _temporalBlocks;
         private readonly ConcurrentBag<BlockedAttemptLog> _attemptLogs;
         private readonly ILogger<BlockedCountryRepo> _logger;
+        private readonly object _lock = new object();
+
 
         public BlockedCountryRepo(ILogger<BlockedCountryRepo> logger)
         {
@@ -122,24 +124,34 @@ namespace Geolocation.Services
         // ================================
         public void LogAttempt(BlockedAttemptLog log)
         {
-            _attemptLogs.Add(log);
+
+            lock (_lock)
+            {
+                _attemptLogs.Add(log);
+            }
+            
             _logger.LogInformation("Logged blocked attempt from {IP} - Blocked: {Blocked}", log.IPAddress, log.WasBlocked);
         }
 
         public PaginatedList<BlockedAttemptLog> GetBlockedAttempts(int page, int size)
         {
-            page = Math.Max(1, page);
-            size = Math.Clamp(size, 1, 100);
+            lock (_lock)
+            {
+                var totalCount = _attemptLogs.Count;
+                var items = _attemptLogs
+                    .OrderByDescending(x => x.Timestamp)
+                    .Skip((page - 1) * size)
+                    .Take(size)
+                    .ToList();
 
-            var allLogs = _attemptLogs;
-
-            var items = allLogs
-                .OrderByDescending(l => l.Timestamp)
-                .Skip((page - 1) * size)
-                .Take(size)
-                .ToList();
-
-            return new PaginatedList<BlockedAttemptLog>(items, allLogs.Count, page, size);
+                return new PaginatedList<BlockedAttemptLog>
+                (
+                    items : items,
+                     totalCount: totalCount,
+                    pageIndex: page,
+                    pageSize: size
+                );
+            }
         }
     }
 }

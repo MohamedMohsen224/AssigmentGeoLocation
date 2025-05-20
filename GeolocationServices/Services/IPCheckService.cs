@@ -27,37 +27,55 @@ namespace Geolocation.Services.Services
         public async Task<bool> CheckIfCurrentIpIsBlocked(HttpContext context)
         {
 
-            string ip = context.Connection.RemoteIpAddress?.ToString();
-            string userAgent = context.Request.Headers["User-Agent"].ToString();
-
-            if (string.IsNullOrWhiteSpace(ip))
+            try
             {
-                _logger.LogWarning("Could not determine caller IP address.");
-                return false;
+                string ip = context.Connection.RemoteIpAddress?.ToString();
+                string userAgent = context.Request.Headers["User-Agent"].ToString();
+
+                if (string.IsNullOrWhiteSpace(ip))
+                {
+                    _logger.LogWarning("Could not determine caller IP address.");
+                    return true; // Fail secure
+                }
+
+                var geo = await _geo.GetCountryWithIpAddress(ip);
+
+                if (geo == null || string.IsNullOrWhiteSpace(geo.CountryCode))
+                {
+                    _logger.LogWarning("Failed to get country code from IP: {IP}", ip);
+                    return true; // Fail secure
+                }
+
+                // Check both permanent and temporal blocks
+                bool isPermanentlyBlocked = _repo.IsCountryBlocked(geo.CountryCode);
+                bool isTemporarilyBlocked = _repo.IsCountryBlocked(geo.CountryCode);
+                bool isBlocked = isPermanentlyBlocked || isTemporarilyBlocked;
+
+                // Enhanced logging
+                _repo.LogAttempt(new BlockedAttemptLog
+                {
+                    IPAddress = ip,
+                    Timestamp = DateTime.UtcNow,
+                    CountryCode = geo.CountryCode,
+                    CountryName = geo.CountryName,
+                    WasBlocked = isBlocked,
+                    UserAgent = userAgent,
+                   
+                });
+
+                if (isBlocked)
+                {
+                    _logger.LogInformation("Blocked request from {Country} ({CountryCode})",
+                        geo.CountryName, geo.CountryCode);
+                }
+
+                return isBlocked;
             }
-
-            var geo = await _geo.GetCountryWithIpAddress(ip);
-
-            if (geo == null || string.IsNullOrWhiteSpace(geo.CountryCode))
+            catch (Exception ex)
             {
-                _logger.LogWarning("Failed to get country code from IP: {IP}", ip);
-                return false;
+                _logger.LogError(ex, "Error checking if IP is blocked");
+                return true; // Fail secure
             }
-
-            bool isBlocked = _repo.IsCountryBlocked(geo.CountryCode);
-
-            // THIS IS WHERE THE LOG ENTRY GETS CREATED AND ADDED TO THE IN-MEMORY LIST
-            _repo.LogAttempt(new BlockedAttemptLog
-            {
-                IPAddress = ip,
-                Timestamp = DateTime.UtcNow,
-                CountryCode = geo.CountryCode,
-                CountryName = geo.CountryName,
-                WasBlocked = isBlocked,
-                UserAgent = userAgent
-            });
-
-            return isBlocked;
         }
     }
 }

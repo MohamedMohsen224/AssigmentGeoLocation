@@ -47,11 +47,11 @@ namespace GeolocationProject
                 client.BaseAddress = new Uri(configuration["GeoLocationApi:BaseUrl"]);
             });
             builder.Services.AddSingleton<IBlockedCountryRepo, BlockedCountryRepo>();
-            builder.Services.AddScoped<IGeoLocationService, GeoLocationService>();
-            builder.Services.AddScoped<IBlockedCountryService, BlockedCountryService>();
-            builder.Services.AddScoped<ILoggingService, LoggingService>();
-            builder.Services.AddScoped<IIPCheckService, IPCheckService>();
-            builder.Services.AddScoped<ITemporalBlockService, TemporalBlockService>();
+            builder.Services.AddSingleton<IGeoLocationService, GeoLocationService>();
+            builder.Services.AddSingleton<IBlockedCountryService, BlockedCountryService>();
+            builder.Services.AddSingleton<ILoggingService, LoggingService>();
+            builder.Services.AddScoped<IIPCheckService , IPCheckService>();
+            builder.Services.AddSingleton<ITemporalBlockService, TemporalBlockService>();
             builder.Services.Configure<CountryCodeOptions>(builder.Configuration);
             builder.Services.Configure<GeoLocationApiConfig>(builder.Configuration.GetSection("GeoLocationApi"));
             builder.Services.AddHttpClient<IGeoLocationService, GeoLocationService>((provider, client) =>

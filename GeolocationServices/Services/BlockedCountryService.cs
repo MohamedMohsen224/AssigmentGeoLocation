@@ -2,6 +2,7 @@
 using Geolocation.Core.Models;
 using Geolocation.Core.Pagination;
 using Geolocation.Services.Services.Interface;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,27 +17,46 @@ namespace Geolocation.Services.Services
         private readonly Dictionary<string, TemporalBlock> _temporalBlocks = new();
         private readonly IBlockedCountryRepo _repo;
         private readonly IGeoLocationService _geo;
+        private readonly ILogger<BlockedCountryService> _logger;
 
-        public BlockedCountryService(IBlockedCountryRepo repo, IGeoLocationService geo)
+        public BlockedCountryService(IBlockedCountryRepo repo, IGeoLocationService geo ,ILogger<BlockedCountryService> logger)
         {
             _repo = repo;
             _geo = geo;
+            this._logger = logger;
         }
 
-        public void AddBlockedCountry(string countryCode)
+        public void AddBlockedCountry(string countryCode, string addedBy = "system")
         {
             countryCode = countryCode.ToUpperInvariant();
+
+            // Check if already blocked
             if (_repo.IsCountryBlocked(countryCode))
+            {
+                _logger.LogWarning("Attempt to block already blocked country: {CountryCode}", countryCode);
                 throw new InvalidOperationException("Country is already blocked.");
+            }
 
             var name = GetCountryNameFromCode(countryCode);
             var entity = new BlockedCountries
             {
                 CountryCode = countryCode,
-                CountryName = name
+                CountryName = name,
             };
 
             _repo.AddBlockedCountry(entity);
+
+            // Log the blocking action
+            _repo.LogAttempt(new BlockedAttemptLog
+            {
+                CountryCode = countryCode,
+                CountryName = name,
+                Timestamp = DateTime.UtcNow,
+
+            });
+
+            _logger.LogInformation("Country {CountryCode} ({CountryName}) blocked by {User}",
+                countryCode, name, addedBy);
         }
 
         public void RemoveBlockedCountry(string code)

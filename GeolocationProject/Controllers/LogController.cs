@@ -1,4 +1,5 @@
-﻿using Geolocation.Services.Services.Interface;
+﻿using Geolocation.Core.IRepo;
+using Geolocation.Services.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,17 +10,22 @@ namespace GeolocationProject.Controllers
     public class LogController : ControllerBase
     {
         private readonly ILoggingService _logService;
+        private readonly IBlockedCountryRepo repo;
 
-        public LogController(ILoggingService logService)
+        public LogController(ILoggingService logService , IBlockedCountryRepo repo)
         {
             _logService = logService;
+            this.repo = repo;
         }
 
         [HttpGet("blocked-attempts")]
-        public IActionResult GetAttempts([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public IActionResult GetBlockedAttempts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var result = _logService.GetBlockedAttemptts(page, pageSize);
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1 || pageSize > 100) pageSize = 10;
+
+            var result = repo.GetBlockedAttempts(pageNumber, pageSize);
             return Ok(result);
-        }   
+        }
     }
 }
