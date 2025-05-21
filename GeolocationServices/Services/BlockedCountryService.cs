@@ -91,7 +91,7 @@ namespace Geolocation.Services.Services
             await Task.CompletedTask;
         }
 
-        private string GetCountryNameFromCode(string code)
+        public string GetCountryNameFromCode(string code)
         {
             var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {

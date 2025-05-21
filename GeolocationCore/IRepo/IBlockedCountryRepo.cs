@@ -22,7 +22,6 @@ namespace Geolocation.Core.IRepo
         bool IsCountryBlocked(string countryCode);
         void RemoveeExpiredTemporalBlocks();
         void LogAttempt(BlockedAttemptLog log);
-
-
+        string GetCountryNameFromCode(string countryCode);
     }
 }

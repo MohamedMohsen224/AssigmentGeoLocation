@@ -153,5 +153,24 @@ namespace Geolocation.Services
                 );
             }
         }
+
+        public string GetCountryNameFromCode(string code)
+        {
+            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+            {"US", "United States"},
+            {"EG", "Egypt"},
+            {"GB", "United Kingdom"},
+            {"FR", "France"},
+            {"DE", "Germany"},
+            {"IN", "India"},
+            {"CN", "China"},
+            {"JP", "Japan"},
+            {"RU", "Russia"}
+            };
+
+            return dict.TryGetValue(code, out var name) ? name : code;
+        }
+
     }
 }
